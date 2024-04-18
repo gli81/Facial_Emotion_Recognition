@@ -23,15 +23,23 @@ def train_model(
 ):
     train_loss_hist = []
     train_acc_hist = []
-    test_loss_hist = []
-    test_acc_hist = []
+    val1_loss_hist = []
+    val1_acc_hist = []
+    val2_loss_hist = [] if val_loader_2 else None
+    val2_acc_hist = [] if val_loader_2 else None
     # start the training/validation process
     print("==> Training starts!")
     print("="*50)
     ## create optimizer
     optimizer = optim.SGD(
-
+        model.parameters(),
+        lr=lr,
+        momentum=momentum,
+        weight_decay=weight_decay
     )
+    best_val_acc = 0
+    model = model.to(device)
+    current_learning_rate = lr
     for i in range(0, num_epoch):
         print("Epoch %d:" %i)
         ## Train on the train set
@@ -94,16 +102,26 @@ def train_model(
                 total_examples += targets.shape[0]
                 correct_examples += correct.item()
         avg_loss = val_loss / len(val_loader_1)
-        test_loss_hist.append(avg_loss)
+        val1_loss_hist.append(avg_loss)
         avg_acc = correct_examples / total_examples
-        test_acc_hist.append(avg_acc)
+        val1_acc_hist.append(avg_acc)
         print(
             "Validation loss: %.4f, Validation accuracy: %.4f" % (avg_loss, avg_acc)
         )
-        total_examples = 0
-        correct_examples = 0
-        val_loss = 0
+        if avg_acc > best_val_acc:
+            best_val_acc = avg_acc
+            if not os.path.exists(checkpoint_folder):
+                os.makedirs(checkpoint_folder)
+            print("Saving ...")
+            state = {'state_dict': model.state_dict(),
+                    'epoch': i,
+                    'lr': current_learning_rate}
+            torch.save(state, os.path.join(checkpoint_folder, save_name))
+        print('')
         if val_loader_2:
+            total_examples = 0
+            correct_examples = 0
+            val_loss = 0
             with torch.no_grad():
                 for batch_idx, (inputs, targets) in enumerate(val_loader_2):
                     inputs = inputs.to(device)
@@ -116,30 +134,31 @@ def train_model(
                     total_examples += targets.shape[0]
                     correct_examples += correct.item()
             avg_loss = val_loss / len(val_loader_2)
-            test_acc_hist.append(avg_loss)
+            val2_loss_hist.append(avg_loss)
             avg_acc = correct_examples / total_examples
-            test_acc_hist.append(avg_acc)
+            val2_acc_hist.append(avg_acc)
+            print(
+                "Validation loss: %.4f, Validation accuracy: %.4f" % (avg_loss, avg_acc)
+            )
         ######################################################################
 
         # save the model checkpoint
-        if avg_acc > best_val_acc:
-            best_val_acc = avg_acc
-            if not os.path.exists(checkpoint_folder):
-                os.makedirs(checkpoint_folder)
-                print("Saving ...")
-                state = {'state_dict': model.state_dict(),
-                        'epoch': i,
-                        'lr': current_learning_rate}
-                torch.save(state, os.path.join(checkpoint_folder, save_name))
-        print('')
         # decay learning rate
-        if i % lr_decay_epoch == 0 and i != 0:
-            current_learning_rate *= lr_decay
-            for param_group in optimizer.param_groups:
-                param_group["lr"] = current_learning_rate
-                print(f"Current learning rate has decayed to %f" %current_learning_rate)
-
+        if lr_decay != 1:
+            if i % lr_decay_epoch == 0 and i != 0:
+                current_learning_rate *= lr_decay
+                for param_group in optimizer.param_groups:
+                    param_group["lr"] = current_learning_rate
+                    print(f"Current learning rate has decayed to %f" %current_learning_rate)
     print("="*50)
     print(
         f"==> Optimization finished! Best validation accuracy: {best_val_acc:.4f}"
+    )
+    return (
+        train_acc_hist,
+        train_loss_hist,
+        val1_acc_hist,
+        val1_loss_hist,
+        val2_acc_hist,
+        val2_loss_hist
     )

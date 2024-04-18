@@ -8,3 +8,4 @@ LR = 0.01
 MOMENTUM = 0.9
 REG = 1e-4
 NUM_EPOCH = 15
+CHECKPOINT_FOLDER="./saved_model/"
