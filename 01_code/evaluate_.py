@@ -35,8 +35,10 @@ def evaluate_and_get_metrics(
     ## evaluate on designated type of image
     with torch.no_grad():
         val_loss = 0
-        total_examples = 0
-        correct_examples = 0
+        target_examples = []
+        predicted_examples = []
+        total_examples_ct = 0
+        correct_examples_ct = 0
         for batch_idx, (inputs, targets) in enumerate(loader):
             # copy inputs to device
             inputs = inputs.to(device)
@@ -49,10 +51,14 @@ def evaluate_and_get_metrics(
             _, predicted = torch.max(out, 1)
             correct = predicted.eq(targets).sum()
             val_loss += loss.detach().cpu()
-            total_examples += targets.shape[0]
-            correct_examples += correct.item()
+            total_examples_ct += targets.shape[0]
+            correct_examples_ct += correct.item()
+            predicted_examples.extend(predicted.cpu().tolist())
+            target_examples.extend(targets.cpu().tolist())
     avg_loss = val_loss / len(loader)
-    avg_acc = correct_examples / total_examples
+    avg_acc = correct_examples_ct / total_examples_ct
     print(
         "Validation loss: %.4f, Validation accuracy: %.4f" % (avg_loss, avg_acc)
     )
+
+
