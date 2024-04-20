@@ -9,7 +9,8 @@ import numpy as np
 import os
 import shutil
 import matplotlib.pyplot as plt
-from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import roc_curve, auc, confusion_matrix, f1_score
+import seaborn as sns
 
 ## TODO load a base/finetuned model
 ## TODO get corresponding validation loader
@@ -72,9 +73,16 @@ def evaluate_and_get_metrics(
     target_ohe_all = np.eye(num_classes)[target_all.astype(int)]
     predicted_ohe_all = np.eye(num_classes)[predicted_all.astype(int)]
     ans = {}
-    ## TODO overall accuracy, save in ans, and return
+    ## overall accuracy, save in ans, and return
     ans["overall_accuracy"] = avg_acc
-    ## TODO class-wise accuracy, return value
+    ## class-wise accuracy, save in ans, and return
+    cm = confusion_matrix(target_all, predicted_all)
+    classwise_acc = np.diag(cm) / np.sum(cm, axis=1)
+    class_labels = [0, 1, 2, 3, 4, 5, 6]
+    ans["classwise_accuracy"] = {
+        label: acc for label, acc in zip(class_labels, classwise_acc)
+    }
+    print(ans["classwise_accuracy"])
     if not os.path.exists("./results/"):
         os.makedirs("./results/")
     if not os.path.exists(f"./results/{model_}"):
@@ -95,15 +103,27 @@ def evaluate_and_get_metrics(
         ans["classwise_fpr"], ans["classwise_tpr"],
         f"./results/{model_}/{evaluate_on}"
     )
-    ## TODO micro-roc curve, which treat each sample equally, save plot
+    ## micro-roc curve, which treat each sample equally, save plot
     ans["micro_fpr"], ans["micro_tpr"], ans["micro_auc"] = plot_micro_roc(
         target_ohe_all, predicted_proba_all,
         f"./results/{model_}/{evaluate_on}"
     )
-    ## TODO weighted-average-roc curve, which considers imbalance between classes
-    ## TODO macro-F1 score, treat each class equally, return value
+    ## weighted-average-roc curve, which considers imbalance between classes
+    ans["weighted_average_fpr"], ans["weighted_average_tpr"], ans["weighted_average_auc"] = plot_wa_roc(
+        ans["classwise_fpr"], ans["classwise_tpr"], target_ohe_all,
+        f"./results/{model_}/{evaluate_on}"
+    )
+    ## macro-F1 score, treat each class equally, return value
+    ans["macro_f1"] = f1_score(target_all, predicted_all, average="macro")
+    ## micro-F1 score, treat each sample equally, return value
+    ans["micro_f1"] = f1_score(target_all, predicted_all, average="micro")
     ## TODO weighted-average F1 score, consider imbalance, return value
-    ## TODO create confusion matrix, save plot
+    ans["weighted_average_f1"] = f1_score(target_all, predicted_all, average="weighted")
+    ## create confusion matrix, save plot
+    get_confusion_matrix(
+        target_all, predicted_all,
+        f"./results/{model_}/{evaluate_on}"
+    )
     return ans
 
 
@@ -164,3 +184,27 @@ def plot_micro_roc(target_ohe, predict_proba, path):
     plt.savefig(f"{path}/micro_average_roc.png")
     plt.show()
     return fpr, tpr, roc_auc
+
+def plot_wa_roc(fpr, tpr, target_ohe, path):
+    all_fpr = np.unique(np.concatenate([fpr[i] for i in range(len(fpr))]))
+    mean_tpr = np.zeros_like(all_fpr)
+    for i in range(len(fpr)):
+        mean_tpr += np.interp(all_fpr, fpr[i], tpr[i]) * (sum(target_ohe[:, i]) / target_ohe.shape[0])
+    weighted_roc_auc = auc(all_fpr, mean_tpr)
+    plt.figure()
+    plt.plot(all_fpr, mean_tpr, label=f"Weighted average ROC (AUC: {weighted_roc_auc:.4f})")
+    plt.legend()
+    plt.savefig(f"{path}/weighted_average_roc.png")
+    plt.show()
+    return all_fpr, mean_tpr, weighted_roc_auc
+
+def get_confusion_matrix(y_true, y_pred, path):
+    plt.figure()
+    sns.heatmap(
+        confusion_matrix(y_true, y_pred),
+        annot=True,
+        fmt='d',
+        cmap="Blues"
+    )
+    plt.savefig(f"{path}/confusion_matrix.png")
+    plt.show()
