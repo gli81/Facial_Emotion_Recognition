@@ -24,6 +24,7 @@ MASK_DICT = {
 def get_loader(
     mask: "str"="full",
     train: "bool"=True,
+    shuffle: "bool"=True
 ):
     
     if mask not in MASK_DICT:
@@ -48,7 +49,7 @@ def get_loader(
     loader_ = DataLoader(
         set_,
         batch_size=batch_size,
-        shuffle=train,
+        shuffle=shuffle, ## or do shuffle=train or shuffle
         num_workers=2 ## just to fit my device
     )
     return loader_

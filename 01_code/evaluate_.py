@@ -28,19 +28,21 @@ def evaluate_and_get_metrics(
     ## get loader based on the designated type of image
     loader = loaders.get_loader(
         mask=evaluate_on,
-        train=False
+        train=False,
+        shuffle=True
     )
+    loss_func = nn.CrossEntropyLoss().to(device)
     ## evaluate on designated type of image
     with torch.no_grad():
         val_loss = 0
         total_examples = 0
         correct_examples = 0
-        for batch_idx, (inputs, targets) in enumerate(lower_mask_val_loader):
+        for batch_idx, (inputs, targets) in enumerate(loader):
             # copy inputs to device
             inputs = inputs.to(device)
             targets = targets.to(device)
             # compute the output and loss
-            out = resnet50(inputs)
+            out = model(inputs)
             loss = loss_func(out, targets)
             # count the number of correctly predicted samples
             # in the current batch
@@ -49,7 +51,7 @@ def evaluate_and_get_metrics(
             val_loss += loss.detach().cpu()
             total_examples += targets.shape[0]
             correct_examples += correct.item()
-    avg_loss = val_loss / len(lower_mask_val_loader)
+    avg_loss = val_loss / len(loader)
     avg_acc = correct_examples / total_examples
     print(
         "Validation loss: %.4f, Validation accuracy: %.4f" % (avg_loss, avg_acc)
