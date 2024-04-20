@@ -5,6 +5,11 @@ import torch
 import torchvision.models as models
 import torch.nn as nn
 import loaders
+import numpy as np
+import os
+import shutil
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_curve, auc
 
 ## TODO load a base/finetuned model
 ## TODO get corresponding validation loader
@@ -18,6 +23,8 @@ def evaluate_and_get_metrics(
     ## load model based on parameter model_
     if model_ not in ["baseline", "upper", "lower", "left", "right"]:
         raise ValueError("Invalid model")
+    if evaluate_on not in ["baseline", "upper", "lower", "left", "right"]:
+        raise ValueError("Invalid evaluation")
     model = models.resnet50()
     num_classes=7
     model.fc = nn.Linear(model.fc.in_features, num_classes)
@@ -31,34 +38,129 @@ def evaluate_and_get_metrics(
         train=False,
         shuffle=True
     )
-    loss_func = nn.CrossEntropyLoss().to(device)
     ## evaluate on designated type of image
     with torch.no_grad():
-        val_loss = 0
-        target_examples = []
-        predicted_examples = []
         total_examples_ct = 0
         correct_examples_ct = 0
+        ## record predict_proba, predicted, true
+        target_all = np.empty((0))
+        predicted_all = np.empty((0))
+        predicted_proba_all = np.empty((0, num_classes))
         for batch_idx, (inputs, targets) in enumerate(loader):
             # copy inputs to device
             inputs = inputs.to(device)
             targets = targets.to(device)
-            # compute the output and loss
+            # compute the output
             out = model(inputs)
-            loss = loss_func(out, targets)
+            predicted_proba_all = np.concatenate(
+                (predicted_proba_all, softmax(out.cpu().numpy())), axis=0
+            )
             # count the number of correctly predicted samples
             # in the current batch
             _, predicted = torch.max(out, 1)
             correct = predicted.eq(targets).sum()
-            val_loss += loss.detach().cpu()
             total_examples_ct += targets.shape[0]
             correct_examples_ct += correct.item()
-            predicted_examples.extend(predicted.cpu().tolist())
-            target_examples.extend(targets.cpu().tolist())
-    avg_loss = val_loss / len(loader)
+            predicted_all = np.concatenate(
+                (predicted_all, predicted.cpu().numpy()), axis=0
+            )
+            target_all = np.concatenate(
+                (target_all, targets.cpu().numpy()), axis=0
+            )
     avg_acc = correct_examples_ct / total_examples_ct
-    print(
-        "Validation loss: %.4f, Validation accuracy: %.4f" % (avg_loss, avg_acc)
+    ## create a one hot encoding version, for metrics calculation
+    target_ohe_all = np.eye(num_classes)[target_all.astype(int)]
+    predicted_ohe_all = np.eye(num_classes)[predicted_all.astype(int)]
+    ans = {}
+    ## TODO overall accuracy, save in ans, and return
+    ans["overall_accuracy"] = avg_acc
+    ## TODO class-wise accuracy, return value
+    if not os.path.exists("./results/"):
+        os.makedirs("./results/")
+    if not os.path.exists(f"./results/{model_}"):
+        os.makedirs(f"./results/{model_}")
+    ## ensure replace
+    if os.path.exists(f"./results/{model_}/{evaluate_on}"):
+        shutil.rmtree(f"./results/{model_}/{evaluate_on}")
+    os.makedirs(f"./results/{model_}/{evaluate_on}")
+    ## roc plot for each class, save plot
+    ans["classwise_fpr"], ans["classwise_tpr"], ans["classwise_auc"] = \
+        plot_class_wise_roc(
+            target_ohe_all, predicted_proba_all,
+            f"./results/{model_}/{evaluate_on}",
+            True
+        )
+    ## macro-roc curve, which treat each class equally, save plot
+    ans["macro_fpr"], ans["macro_fpr"], ans["macro_auc"] = plot_macro_roc(
+        ans["classwise_fpr"], ans["classwise_tpr"],
+        f"./results/{model_}/{evaluate_on}"
     )
+    ## TODO micro-roc curve, which treat each sample equally, save plot
+    ans["micro_fpr"], ans["micro_tpr"], ans["micro_auc"] = plot_micro_roc(
+        target_ohe_all, predicted_proba_all,
+        f"./results/{model_}/{evaluate_on}"
+    )
+    ## TODO weighted-average-roc curve, which considers imbalance between classes
+    ## TODO macro-F1 score, treat each class equally, return value
+    ## TODO weighted-average F1 score, consider imbalance, return value
+    ## TODO create confusion matrix, save plot
+    return ans
 
 
+def softmax(x):
+    e_x = np.exp(x - np.max(x, axis=1, keepdims=True))
+    return e_x / e_x.sum(axis=1, keepdims=True)
+
+
+def plot_class_wise_roc(
+        target_ohe, predict_proba, path, save=False
+    ):
+    fpr = {}
+    tpr = {}
+    roc_auc = {}
+    plt.figure()
+    for i in range(target_ohe.shape[1]):
+        fpr[i], tpr[i], _ = roc_curve(target_ohe[:, i], predict_proba[:, i])
+        roc_auc[i] = auc(fpr[i], tpr[i])
+        plt.plot(
+            fpr[i], tpr[i],
+            label=f"Class {i + 1} ROC curve (AUC={roc_auc[i]:.4f})"
+        )
+    plt.legend()
+    ## save plot
+    if save:
+        plt.savefig(f"{path}/classwise_roc.png")
+    plt.show()
+    return fpr, tpr, roc_auc
+
+def plot_macro_roc(fpr, tpr, path):
+    all_fpr = np.unique(
+        np.concatenate([fpr[i] for i in range(len(fpr))])
+    )
+    # Interpolate all ROC curves at these points
+    mean_tpr = np.zeros_like(all_fpr)
+    for i in range(len(fpr)):
+        mean_tpr += np.interp(all_fpr, fpr[i], tpr[i])
+    # Average it and compute AUC
+    mean_tpr /= len(fpr)
+    # Finally, compute the AUC
+    macro_auc = auc(all_fpr, mean_tpr)
+    plt.figure()
+    plt.plot(
+        all_fpr, mean_tpr,
+        label=f"Macro-average ROC curve (area = {macro_auc:.4f})",
+    )
+    plt.legend()
+    plt.savefig(f"{path}/macro_average_roc.png")
+    plt.show()
+    return all_fpr, mean_tpr, macro_auc
+
+def plot_micro_roc(target_ohe, predict_proba, path):
+    fpr, tpr, _  = roc_curve(target_ohe.ravel(), predict_proba.ravel())
+    roc_auc = auc(fpr, tpr)
+    plt.figure()
+    plt.plot(fpr, tpr, label=f"Micro average ROC (AUC: {roc_auc:.4f})")
+    plt.legend()
+    plt.savefig(f"{path}/micro_average_roc.png")
+    plt.show()
+    return fpr, tpr, roc_auc
