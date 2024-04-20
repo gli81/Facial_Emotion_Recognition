@@ -117,7 +117,7 @@ def evaluate_and_get_metrics(
     ans["macro_f1"] = f1_score(target_all, predicted_all, average="macro")
     ## micro-F1 score, treat each sample equally, return value
     ans["micro_f1"] = f1_score(target_all, predicted_all, average="micro")
-    ## TODO weighted-average F1 score, consider imbalance, return value
+    ## weighted-average F1 score, consider imbalance, return value
     ans["weighted_average_f1"] = f1_score(target_all, predicted_all, average="weighted")
     ## create confusion matrix, save plot
     get_confusion_matrix(
