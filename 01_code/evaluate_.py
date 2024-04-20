@@ -11,10 +11,18 @@ import shutil
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc, confusion_matrix, f1_score
 import seaborn as sns
+import json
 
 ## TODO load a base/finetuned model
 ## TODO get corresponding validation loader
 ## validate on that loader, record the predicted and the target value
+
+class NumpyArrayEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
 
 def evaluate_and_get_metrics(
     model_: "str",
@@ -124,6 +132,9 @@ def evaluate_and_get_metrics(
         target_all, predicted_all,
         f"./results/{model_}/{evaluate_on}"
     )
+
+    with open(f"./results/{model_}/{evaluate_on}/metrics.txt", 'w') as f:
+        json.dump(ans, f, indent=4, cls=NumpyArrayEncoder)
     return ans
 
 
