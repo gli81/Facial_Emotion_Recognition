@@ -32,9 +32,9 @@ def evaluate_and_get_metrics(
     device: "str"
 ) -> "Dict":
     ## load model based on parameter model_
-    if model_ not in ["baseline", "upper", "lower", "left", "right"]:
+    if model_ not in ["full", "upper", "lower", "left", "right"]:
         raise ValueError("Invalid model")
-    if evaluate_on not in ["baseline", "upper", "lower", "left", "right"]:
+    if evaluate_on not in ["full", "upper", "lower", "left", "right"]:
         raise ValueError("Invalid evaluation")
     model = models.resnet50()
     num_classes=7
