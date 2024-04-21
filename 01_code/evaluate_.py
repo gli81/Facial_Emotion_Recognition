@@ -13,9 +13,6 @@ from sklearn.metrics import roc_curve, auc, confusion_matrix, f1_score
 import seaborn as sns
 import json
 
-## TODO load a base/finetuned model
-## TODO get corresponding validation loader
-## validate on that loader, record the predicted and the target value
 
 class NumpyArrayEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -24,6 +21,11 @@ class NumpyArrayEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
+CLASS_LIST = ["angry", "disgust", "fear", "happy", "neutral", "sad", "surprise"]
+
+## load a base/finetuned model
+## get corresponding validation loader
+## validate on that loader, record the predicted and the target value
 def evaluate_and_get_metrics(
     model_: "str",
     evaluate_on: "str",
@@ -86,9 +88,8 @@ def evaluate_and_get_metrics(
     ## class-wise accuracy, save in ans, and return
     cm = confusion_matrix(target_all, predicted_all)
     classwise_acc = np.diag(cm) / np.sum(cm, axis=1)
-    class_labels = [0, 1, 2, 3, 4, 5, 6]
     ans["classwise_accuracy"] = {
-        label: acc for label, acc in zip(class_labels, classwise_acc)
+        label: acc for label, acc in zip(CLASS_LIST, classwise_acc)
     }
     print(ans["classwise_accuracy"])
     if not os.path.exists("./results/"):
@@ -155,7 +156,7 @@ def plot_class_wise_roc(
         roc_auc[i] = auc(fpr[i], tpr[i])
         plt.plot(
             fpr[i], tpr[i],
-            label=f"Class {i + 1} ROC curve (AUC={roc_auc[i]:.4f})"
+            label=f"Class {CLASS_LIST[i]} ROC curve (AUC={roc_auc[i]:.4f})"
         )
     plt.legend()
     ## save plot
@@ -215,6 +216,8 @@ def get_confusion_matrix(y_true, y_pred, path):
         confusion_matrix(y_true, y_pred),
         annot=True,
         fmt='d',
+        xticklabels=CLASS_LIST,
+        yticklabels=CLASS_LIST,
         cmap="Blues"
     )
     plt.savefig(f"{path}/confusion_matrix.png")
