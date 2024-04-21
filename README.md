@@ -1,2 +1,3 @@
-# Facial_Emotion_Recognition
-Deep Learning Project to detect emotions from facial images
+# Predicting Human Emotions  
+Using convolutional neural networks to recognize human facial emotions and determine the relative importance of the upper, lower, right, and left half of one’s face in emotion recognition.  
+
