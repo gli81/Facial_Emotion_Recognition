@@ -30,8 +30,6 @@ def get_loader(
     if mask not in MASK_DICT:
         raise ValueError("Invalid mask parameter")
     dir_ = "./data/test"
-    if train:
-        dir_ = "./data/train"
     transform = transforms.Compose(
         [
             transforms.ToTensor(),
@@ -41,6 +39,18 @@ def get_loader(
             )
         ]
     )
+    if train:
+        dir_ = "./data/train"
+        transform = transforms.Compose(
+            [
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                ImgMask(MASK_DICT[mask]),
+                transforms.Normalize(
+                    (0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)
+                )
+            ]
+        )
     set_ = FacialImageData(
         directory=dir_,
         transform=transform
@@ -49,7 +59,7 @@ def get_loader(
     loader_ = DataLoader(
         set_,
         batch_size=batch_size,
-        shuffle=shuffle, ## or do shuffle=train or shuffle
+        shuffle=shuffle,
         num_workers=2 ## just to fit my device
     )
     return loader_
