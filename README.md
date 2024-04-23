@@ -26,8 +26,7 @@ The results of training the baseline and subsequent fine-tuned models (the basel
 <img width="665" alt="image" src="https://github.com/AaryaDesai1/Facial_Emotion_Recognition/assets/143753050/51fcd9f1-8f52-4f75-aaad-c3c33dc07160">
 
 ## Conclusion: 
-Overall, the study demonstrates that while full-face images yield the best FER performance, there is substantial merit in exploring and improving techniques for FER from partially occluded faces. This is contingent on the implementation of appropriate training adjustments and model enhancement. For a more extensive discussion of the results, strengths, and limitations, please refer to the [final report](). 
-
+Overall, the study demonstrates that while full-face images yield the best FER performance, there is substantial merit in exploring and improving techniques for FER from partially occluded faces. This is contingent on the implementation of appropriate training adjustments and model enhancement. For a more extensive discussion of the results, strengths, and limitations, please refer to the [final report](https://github.com/AaryaDesai1/Facial_Emotion_Recognition/tree/main/04_docs)
 
 
 
