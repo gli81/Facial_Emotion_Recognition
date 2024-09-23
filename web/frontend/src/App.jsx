@@ -1,48 +1,50 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import reactLogo from './assets/react.svg';
+import viteLogo from '/vite.svg';
+import './App.css';
 
 function App() {
   // want a image submission form
 
   // image state
-  const [im, setIm] = useState(null)
+  // const [im, setIm] = useState(null)
 
   // image preview state
-  const [imagePreview, setImagePreview] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null);
 
   // image upload event handler
   const handleImageUpload = (e) => {
     // get the image file
-    const file = e.target.files[0]
-    // set the image file to state
-    setIm(file)
+    const file = e.target.files[0];
     // create a preview for the image
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result)
-      console.log(reader.result)
+      // console.log(reader.result)
     }
     reader.readAsDataURL(file)
   }
 
   // image submit event handler
   const handleImageSubmit = async () => {
-    // create a form data to send the image
-    const formData = new FormData()
-    formData.append('image', im)
-    // then convert to base64
+    const ops = {
+      method: 'POST',
+      body: {
+        image: imagePreview,
+        model: "full"
+      }
+    }
 
     // send the image to the server
     try {
-      const response = await fetch('http://localhost:5001/upload', {
-        method: 'POST',
-        body: formData,
-      })
+      console.log(ops)
+      // const response = await fetch('http://localhost:5001/upload', {
+      //   method: 'POST',
+      //   body: formData,
+      // })
 
-      const data = await response.json()
-      console.log(data)
+      // const data = await response.json()
+      // console.log(data)
     } catch (error) {
       console.error(error)
     }
@@ -66,9 +68,6 @@ function App() {
       </header>
     </div>
   )
-  // then post to server
-  // then get response
-  // then display the response 
 }
 
 export default App
