@@ -12,17 +12,24 @@ import (
 
 func UploadImage(c *gin.Context) {
 	var body struct {
-		Image string `json: "image" binding: "required"`
-		Model string `json: "model" binding: "required"`
+		Image string `json:"image" binding:"required"`
+		Model string `json:"model" binding:"required"`
 	}
 
-	c.BindJSON(&body)
+	err := c.BindJSON(&body)
 
 	// send request to the model
 	url := "http://localhost:5000/inference"
 	payload := map[string]string{
 		"image":      body.Image,
 		"model_name": body.Model,
+	}
+	fmt.Println(payload["model_name"])
+	if err != nil {
+		c.JSON(400, gin.H{
+			"msg": err.Error(),
+		})
+		return
 	}
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
@@ -49,7 +56,7 @@ func UploadImage(c *gin.Context) {
 		})
 		return
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() // don't forget!!
 	// get response data
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {

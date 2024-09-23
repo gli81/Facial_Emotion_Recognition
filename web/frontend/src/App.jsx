@@ -4,47 +4,53 @@ import viteLogo from '/vite.svg';
 import './App.css';
 
 function App() {
-  // want a image submission form
-
-  // image state
-  // const [im, setIm] = useState(null)
-
   // image preview state
   const [imagePreview, setImagePreview] = useState(null);
-
-  // image upload event handler
+  // image upload event
   const handleImageUpload = (e) => {
     // get the image file
     const file = e.target.files[0];
     // create a preview for the image
     const reader = new FileReader();
     reader.onloadend = () => {
-      setImagePreview(reader.result)
+      setImagePreview(reader.result);
       // console.log(reader.result)
     }
-    reader.readAsDataURL(file)
+    reader.readAsDataURL(file);
+
+    // tried to do resize in frontend, but python just easier to work with images
+    // let files = file.files;
+    // if (files.length === 0) {
+    //   return;
+    // }
+    // let file2 = files[0];
+    // fileReader = new FileReader();
+    // fileReader.onload = function (e) {
+
+    // }
   }
 
   // image submit event handler
   const handleImageSubmit = async () => {
-    const ops = {
-      method: 'POST',
-      body: {
+    try {
+      // const base64img = await resizeAndConvertToBase64(imagePreview)
+      const ops = {
         image: imagePreview,
         model: "full"
       }
-    }
 
     // send the image to the server
-    try {
       console.log(ops)
-      // const response = await fetch('http://localhost:5001/upload', {
-      //   method: 'POST',
-      //   body: formData,
-      // })
+      const response = await fetch('http://localhost:5001/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(ops),
+      })
 
-      // const data = await response.json()
-      // console.log(data)
+      const data = await response.json()
+      console.log(data)
     } catch (error) {
       console.error(error)
     }
@@ -53,9 +59,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <img src={reactLogo} className="App-logo" alt="react logo" />
-        <img src={viteLogo} className="App-logo" alt="vite logo" />
-        <h1>Upload an Image</h1>
+        <h1>Upload an Image for Emotion Classification</h1>
         <input type="file" accept="image/*" onChange={handleImageUpload} />
         {imagePreview && (
           <img
