@@ -2,13 +2,50 @@
 Using convolutional neural networks to recognize human facial emotions and determine the relative importance of the upper, lower, right, and left half of one’s face in emotion recognition.  
 
 ## How to Navigate this Repository: 
-This repository was created for the members of this team to collaborate on this project, which aimed at using ResNet50 to conduct facial emotional recognition on full and partial images from the FER2013 dataset. The contents of this repository include:
-1. [**Data**](https://github.com/AaryaDesai1/Facial_Emotion_Recognition/tree/main/00_data): The data was loaded using the customed [FacialImageDataset class](https://github.com/AaryaDesai1/Facial_Emotion_Recognition/tree/main/01_code/dataset.py). This class inherits the `torch.utils.data.Dataset` class and helps torch to load the data and sample the data for both the train set and the test set.
-2. [**Code**](https://github.com/AaryaDesai1/Facial_Emotion_Recognition/tree/main/01_code): The code folder contains an array of different py files and Jupyter notebooks used train the baseline model and fine tune additional models. The most important file and folder used were: [baseline.ipynb](https://github.com/AaryaDesai1/Facial_Emotion_Recognition/tree/main/01_code/baseline.ipynb) to train the baseline model, [finetune_*_masked.ipynb](https://github.com/AaryaDesai1/Facial_Emotion_Recognition/tree/main/01_code/finetune_upper_masked.ipynb) to fine tune each additional model.
-3. [**Intermediate Files**](https://github.com/AaryaDesai1/Facial_Emotion_Recognition/tree/main/02_intermediate_files): This contains all files that were used to explore the data and test different methods to conduct the project at hand. These are kind of like *scrapbooks* the team used to build on the assignment.
-4. [**Results**](https://github.com/AaryaDesai1/Facial_Emotion_Recognition/tree/main/03_results): This folder contains all the code needed to obtain the results. It additionally has folders for each combination of trained on-evaluated on metrics and images for the results.
-5. [**Docs**](https://github.com/AaryaDesai1/Facial_Emotion_Recognition/tree/main/04_docs): This folder contains the product of this project, i.e., the final report. 
 
+This repository, originally forked from a Duke University Machine Learning class project by team Iguana, focuses on using ResNet50 for facial emotion recognition on full and partial images from the FER2013 dataset. The contents include:
+```
+|
+| - classifier (PyTorch)
+    | - data: training dataset
+    | - saved_models: trained ResNet models saved as .pth files
+    | - custom_transforms.py: defines custom transformation for preprocessing the data
+    | - dataset.py: defines custom torch.utils.data.Dataset class to transform our images to tensors torch can easily sample from.
+    | - evaluate_.py: defines various evaluation metrics
+    | - finetune_*_masked.ipynb: partial face models training
+    | - hyperparameters: defines hyperparameters for training
+    | - loaders.py: defines torch.utils.data.DataLoader to form batches and load data samples
+    | - training.py: defines the whole training process
+| - web
+    |
+    | - frontend: frontend code (React)
+    | - inference
+        | - saved_models: trained ResNet models saved as .pth files
+        | - src: API for model inference (Python Flask)
+    | - interface: API that handles webpage user actions (Go)
+```
+
+## How to use
+
+To run the frontend
+
+```shell
+cd web/frontend
+npm i
+npm run dev
+```
+
+To run the interface
+```shell
+cd web/interface
+go run main.go
+```
+
+To run the inference API
+```shell
+cd web
+flask --app inference.src run
+```
 
 ## Abstract:
 Facial emotional recognition (FER) is an important and developing field in deep learning, with a wide range of applications, including informing human-computer interaction, mental health awareness, and more. This study aimed to further explore FER using ResNet50 on the FER2013 dataset. In particular, it sought to understand whether FER could be conducted on partial images, by using selective occlusion of the upper, lower, right, and left halves of facial images. The findings indicate that a baseline ResNet50 model performs optimally on full facial images, and that performance significantly deteriorates when attempting to predict emotions on masked images. However, when masked images are incorporated into the training set in fine-tuned models, the performance on the respective masked image (e.g., performance on upper-masked images for a baseline model further fine-tuned on upper-masked images) is comparable, if not marginally superior. The findings of this study indicate that fine-tuning using image augmentation via occlusion may be a promising avenue for the advancement of the field of FER. Additionally, the study’s strengths and limitations are outlined, along with potential future directions for the research area. 
