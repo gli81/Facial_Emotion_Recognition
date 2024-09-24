@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+defines the app factory function here
+"""
+
 from flask import Flask
 from flask_restx import Api
 from .config import DevConfig, ProdConfig, TestConfig

@@ -1,5 +1,11 @@
 package main
 
+/**
+ * Web interface for the Facial Emotion Recognition
+ * handles user auth {TODO} and
+ * pass image and model selection to the classifier
+ */
+
 import (
 	// "fmt"
 	// "os"
@@ -21,6 +27,7 @@ func init() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
+	// read dotenv for DB code commented out
 	// 	host := os.Getenv("DB_HOST")
 	// 	port := os.Getenv("DB_PORT")
 	// 	user := os.Getenv("DB_USERNAME")
@@ -41,6 +48,7 @@ func init() {
 func main() {
 	r := gin.Default()
 	r.Use(cors.Default())
+	// register routes
 	r.POST("/upload", routes.UploadImage)
-	r.Run()
+	r.Run(":5001")
 }

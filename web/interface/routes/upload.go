@@ -1,5 +1,10 @@
 package routes
 
+/**
+ * Route for uploading images
+ * @api {post} /upload Upload an image
+ */
+
 import (
 	"bytes"
 	"encoding/json"

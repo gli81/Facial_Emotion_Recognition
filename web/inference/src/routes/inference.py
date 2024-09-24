@@ -1,23 +1,19 @@
 # -*- coding: utf-8 -*-
 
+"""
+Defines route for model inference
+error handling{TODO}
+"""
+
 from flask import request, jsonify, make_response
 from flask_restx import fields, Resource, Namespace
 import torch
 import torchvision.models as models
 import os
-# import pandas as pd
 import numpy as np
 import base64
 from PIL import Image
 from io import BytesIO
-# image_files = pd.DataFrame(columns=range(784)).add_prefix('pixels_')
-# for i in range(1, 6):
-#     r_image = cv2.imread(f'images/{i}.JPG')
-#     numpy_image = cv2.cvtColor(r_image, cv2.COLOR_BGR2GRAY)
-#     image = cv2.resize(numpy_image, (28, 28)).astype(np.float32)
-#     image = image.reshape(-1)
-#     image_files.loc[f'image_{i}', 'pixels_0':] = image
-# print(image_files.head())
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -29,19 +25,18 @@ inf_ns = Namespace(
     path="/"
 )
 
-
 @inf_ns.route("/inference")
 class Inference(Resource):
     def post(self):
+        ## get an image and a model name
         data = request.get_json()
-        ##  get an image and a model name
         image = data.get("image")
         if "data:image" in image:
             image = image.split(",")[1]
         image_bytes = base64.b64decode(image)
         imgstream = BytesIO(image_bytes)
         image = Image.open(imgstream)
-        # image = image.convert("L")
+        # image = image.convert("L") ## the model wants RGB
         image = image.convert("RGB")
         image = image.resize((28, 28))
         # image.show() ## so blurry but that is 28*28 grayscale so fine
@@ -63,7 +58,7 @@ class Inference(Resource):
         resnet50.to(device)
         resnet50.eval()
         ## make prediction
-        ## return prediction
         rslt = resnet50(imginput)
+        ## return prediction
         return make_response(jsonify({"msg": "Success", "data": {"prediction": torch.argmax(rslt).item()}}), 200)
         # return resnet50(image)

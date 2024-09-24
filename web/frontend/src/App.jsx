@@ -44,22 +44,22 @@ function App() {
       const ops = {
         image: imagePreview,
         model: model
-      }
+      };
 
-    // send the image to the server
-      console.log(ops)
+    // send the image to the go server
+      // console.log(ops);
       const response = await fetch('http://localhost:5001/upload', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(ops),
-      })
+      });
 
-      const data = await response.json()
-      console.log(data)
+      const data = await response.json();
+      console.log(data);
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
   }
 
@@ -99,4 +99,4 @@ function App() {
   )
 }
 
-export default App
+export default App;
